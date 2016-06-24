@@ -10,10 +10,14 @@ import com.reconinstruments.ui.carousel.CarouselItem;
 import com.reconinstruments.ui.carousel.StandardCarouselItem;
 import com.reconinstruments.ui.dialog2.ReconDialog;
 import com.reconinstruments.ui.dialog2.CarouselDialog;
+import com.reconinstruments.ui.dialog2.SpinnerComboDialog;
 import com.reconinstruments.ui.examples.R;
 import com.reconinstruments.ui.list.SimpleListActivity;
 import com.reconinstruments.ui.list.StandardListItem;
+import com.reconinstruments.ui.spinner.SpinnerConfig;
+import com.reconinstruments.ui.spinner.SpinnerComboView;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -53,6 +57,21 @@ public class DialogExamples extends SimpleListActivity {
                 new ListItem("Selection Dialog",new OnClickCallback() {
                     public void onClick(ListItem item) {
                         createSelectionDialog(item);
+                    }
+                }),
+                new ListItem("Number Selection",new OnClickCallback() {
+                    public void onClick(ListItem item) {
+                        createNumberDialog(item);
+                    }
+                }),
+                new ListItem("Time Selection",new OnClickCallback() {
+                    public void onClick(ListItem item) {
+                        createTimeDialog(item);
+                    }
+                }),
+                new ListItem("Month Selection",new OnClickCallback() {
+                    public void onClick(ListItem item) {
+                        createDateDialog(item);
                     }
                 }),
                 new ListItem("Pop up Dialog",new OnClickCallback() {
@@ -121,8 +140,99 @@ public class DialogExamples extends SimpleListActivity {
                 listItem.setSubtitle(((StandardCarouselItem) item).getTitle());
                 timeSelection = position;
                 dialog.dismiss();
-            }});
-        builder.createDialog().show();
+            }
+        }).createDialog().show();
+    }
+
+    int numValue = 0;
+    private void createNumberDialog(final ListItem listItem) {
+        SpinnerConfig.NumberSpinnerComboConfig comboConfig = new SpinnerConfig.NumberSpinnerComboConfig(2);
+
+        SpinnerComboDialog.Builder<Integer> builder = new SpinnerComboDialog.Builder<Integer>(this).setTitle("Set number");
+        builder.setSpinnerConfig(comboConfig);
+        builder.setInitialValue(numValue);
+        builder.setOnValueSetListener(new SpinnerComboDialog.OnValueSetListener<Integer>() {
+            @Override
+            public void onValueSet(Integer value) {
+                listItem.setSubtitle(value.toString());
+                numValue = value;
+            }
+        }).createDialog().show();
+    }
+
+    int timeValue = 0;
+    private void createTimeDialog(final ListItem listItem) {
+
+        SpinnerConfig.SpinnerComboConfig<Integer> comboConfig = new SpinnerConfig.SpinnerComboConfig<Integer>() {
+            @Override
+            public Integer getValue(ArrayList<SpinnerComboView.SpinnerView> spinners) {
+                int seconds = spinners.get(4).getSelected()*10+spinners.get(5).getSelected();
+                int minutes = spinners.get(2).getSelected()*10+spinners.get(3).getSelected();
+                int hours = spinners.get(0).getSelected()*10+spinners.get(1).getSelected();
+                return seconds+minutes*60+hours*60*60;
+            }
+            @Override
+            public void setValue(ArrayList<SpinnerComboView.SpinnerView> spinners, Integer value) {
+                int secondsTotal = value;
+                int seconds = secondsTotal%60;
+                int minutes = secondsTotal/60%60;
+                int hours = secondsTotal/(60*60);
+                spinners.get(5).setSelected(seconds%10);
+                spinners.get(4).setSelected(seconds/10);
+                spinners.get(3).setSelected(minutes%10);
+                spinners.get(2).setSelected(minutes/10);
+                spinners.get(1).setSelected(hours%10);
+                spinners.get(0).setSelected(hours/10);
+            }
+        };
+        // set combo format, max value is 99:59:59
+        comboConfig.addDigit(9).addDigit(9).addText(":").addDigit(5).addDigit(9).addText(":").addDigit(5).addDigit(9);
+
+        SpinnerComboDialog.Builder<Integer> builder = new SpinnerComboDialog.Builder<Integer>(this).setTitle("Set time");
+        builder.setSpinnerConfig(comboConfig);
+        builder.setInitialValue(timeValue);
+        builder.setOnValueSetListener(new SpinnerComboDialog.OnValueSetListener<Integer>() {
+            @Override
+            public void onValueSet(Integer value) {
+                int seconds = value;
+                listItem.setSubtitle(String.format("%02d:%02d:%02d", seconds / (60 * 60), seconds / 60 % 60, seconds % 60));
+                timeValue = seconds;
+            }
+        }).createDialog().show();
+    }
+    static String[] months = new String[]{
+            "January","February","March","April","May","June",
+            "July","August","September","October","November","December"};
+
+    /** Basic number input config, input x digit number */
+    public static class MonthSpinnerComboConfig extends SpinnerConfig.SpinnerComboConfig<Integer> {
+        public MonthSpinnerComboConfig() {
+            addComponent(new SpinnerConfig.TextOption(months));
+        }
+        @Override
+        public Integer getValue(ArrayList<SpinnerComboView.SpinnerView> spinners) {
+            return spinners.get(0).getSelected();
+        }
+        @Override
+        public void setValue(ArrayList<SpinnerComboView.SpinnerView> spinners, Integer value) {
+            spinners.get(0).setSelected(value);
+        }
+    }
+
+    int monthValue = 0;
+    private void createDateDialog(final ListItem listItem) {
+
+        MonthSpinnerComboConfig comboConfig = new MonthSpinnerComboConfig();
+        SpinnerComboDialog.Builder<Integer> builder = new SpinnerComboDialog.Builder<Integer>(this).setTitle("Set month");
+        builder.setSpinnerConfig(comboConfig);
+        builder.setInitialValue(monthValue);
+        builder.setOnValueSetListener(new SpinnerComboDialog.OnValueSetListener<Integer>() {
+            @Override
+            public void onValueSet(Integer value) {
+                listItem.setSubtitle(months[value]);
+                monthValue = value;
+            }
+        }).createDialog().show();
     }
 
     /**
@@ -171,13 +281,13 @@ public class DialogExamples extends SimpleListActivity {
     public void createCustomViewDialog() {
         new ReconDialog.Builder(this).setLayout(R.layout.dialog_custom_layout)
                 .setViewCallback(new ReconDialog.Builder.ViewCallback() {
-            @Override
-            public void updateView(View view) {
-                ((TextView)findViewById(R.id.text1)).setText("Title");
-                ((TextView)findViewById(R.id.text2)).setText("Subtitle 1");
-                ((TextView)findViewById(R.id.text3)).setText("Subtitle 2");
-            }
-        }).createDialog().show();
+                    @Override
+                    public void updateView(View view) {
+                        ((TextView)findViewById(R.id.text1)).setText("Title");
+                        ((TextView)findViewById(R.id.text2)).setText("Subtitle 1");
+                        ((TextView)findViewById(R.id.text3)).setText("Subtitle 2");
+                    }
+                }).createDialog().show();
     }
 
     int optionSelected = 0;
