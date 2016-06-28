@@ -6,8 +6,10 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.v4.content.res.ResourcesCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -88,6 +90,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         Notification notification = new Notification.Builder(getApplicationContext())
                 .setContentTitle("interactive title " + i)
                 .setSmallIcon(R.drawable.ic_launcher_share)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_share))
                 .setContentText("interactive text " + i)
                 .setContentIntent(pendingIntent)
                 .build();
